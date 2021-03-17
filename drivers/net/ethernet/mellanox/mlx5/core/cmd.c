@@ -1859,6 +1859,7 @@ int mlx5_cmd_exec(struct mlx5_core_dev *dev, void *in, int in_size, void *out,
 		  int out_size)
 {
 	int err;
+    printk("HELLO THERE in mlx5_cmd_exec?\n");
 
 	err = cmd_exec(dev, in, in_size, out, out_size, NULL, NULL, false);
 	return err ? : mlx5_cmd_check(dev, in, out);

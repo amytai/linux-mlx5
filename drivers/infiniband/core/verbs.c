@@ -408,13 +408,19 @@ EXPORT_SYMBOL(rdma_move_ah_attr);
 static int rdma_check_ah_attr(struct ib_device *device,
 			      struct rdma_ah_attr *ah_attr)
 {
-	if (!rdma_is_port_valid(device, ah_attr->port_num))
+	if (!rdma_is_port_valid(device, ah_attr->port_num)) {
+        printk("port isn't valid lol\n");
 		return -EINVAL;
+    }
 
 	if ((rdma_is_grh_required(device, ah_attr->port_num) ||
 	     ah_attr->type == RDMA_AH_ATTR_TYPE_ROCE) &&
-	    !(ah_attr->ah_flags & IB_AH_GRH))
+	    !(ah_attr->ah_flags & IB_AH_GRH)) {
+        printk("whats this einval? grh_required: %d, ROCE? %d, flags.. %d\n",
+            rdma_is_grh_required(device, ah_attr->port_num), ah_attr->type == RDMA_AH_ATTR_TYPE_ROCE,
+            !(ah_attr->ah_flags & IB_AH_GRH));
 		return -EINVAL;
+    }
 
 	if (ah_attr->grh.sgid_attr) {
 		/*
@@ -422,8 +428,10 @@ static int rdma_check_ah_attr(struct ib_device *device,
 		 * parameters
 		 */
 		if (ah_attr->grh.sgid_attr->index != ah_attr->grh.sgid_index ||
-		    ah_attr->grh.sgid_attr->port_num != ah_attr->port_num)
+		    ah_attr->grh.sgid_attr->port_num != ah_attr->port_num) {
+            printk("unf what\n");
 			return -EINVAL;
+        }
 	}
 	return 0;
 }
@@ -443,6 +451,7 @@ static int rdma_fill_sgid_attr(struct ib_device *device,
 	*old_sgid_attr = ah_attr->grh.sgid_attr;
 
 	ret = rdma_check_ah_attr(device, ah_attr);
+    printk("rdma_check_ah_attr ret: %d\n", ret);
 	if (ret)
 		return ret;
 
@@ -455,8 +464,10 @@ static int rdma_fill_sgid_attr(struct ib_device *device,
 
 	sgid_attr =
 		rdma_get_gid_attr(device, ah_attr->port_num, grh->sgid_index);
-	if (IS_ERR(sgid_attr))
+	if (IS_ERR(sgid_attr)) {
+        printk("actually, the error is here...?\n");
 		return PTR_ERR(sgid_attr);
+    }
 
 	/* Move ownerhip of the kref into the ah_attr */
 	grh->sgid_attr = sgid_attr;
@@ -1551,6 +1562,7 @@ bool ib_modify_qp_is_ok(enum ib_qp_state cur_state, enum ib_qp_state next_state,
 			enum ib_qp_type type, enum ib_qp_attr_mask mask)
 {
 	enum ib_qp_attr_mask req_param, opt_param;
+    printk("hi, in ib_modify_qp_is_ok\n");
 
 	if (mask & IB_QP_CUR_STATE  &&
 	    cur_state != IB_QPS_RTR && cur_state != IB_QPS_RTS &&
@@ -1569,6 +1581,7 @@ bool ib_modify_qp_is_ok(enum ib_qp_state cur_state, enum ib_qp_state next_state,
 	if (mask & ~(req_param | opt_param | IB_QP_STATE))
 		return false;
 
+    printk("modify qp was ok!\n");
 	return true;
 }
 EXPORT_SYMBOL(ib_modify_qp_is_ok);
@@ -1617,6 +1630,7 @@ static bool is_qp_type_connected(const struct ib_qp *qp)
 static int _ib_modify_qp(struct ib_qp *qp, struct ib_qp_attr *attr,
 			 int attr_mask, struct ib_udata *udata)
 {
+    printk("in _ib_modify_qp\n");
 	u8 port = attr_mask & IB_QP_PORT ? attr->port_num : qp->port;
 	const struct ib_gid_attr *old_sgid_attr_av;
 	const struct ib_gid_attr *old_sgid_attr_alt_av;
@@ -1625,6 +1639,7 @@ static int _ib_modify_qp(struct ib_qp *qp, struct ib_qp_attr *attr,
 	if (attr_mask & IB_QP_AV) {
 		ret = rdma_fill_sgid_attr(qp->device, &attr->ah_attr,
 					  &old_sgid_attr_av);
+        printk("lol here... ret: %d\n", ret);
 		if (ret)
 			return ret;
 	}
@@ -1689,6 +1704,7 @@ static int _ib_modify_qp(struct ib_qp *qp, struct ib_qp_attr *attr,
 	    ((attr_mask & IB_QP_STATE) && attr->qp_state == IB_QPS_INIT))
 		rdma_counter_bind_qp_auto(qp, attr->port_num);
 
+    printk("uhm hello?\n");
 	ret = ib_security_modify_qp(qp, attr, attr_mask, udata);
 	if (ret)
 		goto out;

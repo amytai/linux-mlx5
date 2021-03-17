@@ -507,6 +507,8 @@ int mlx5_core_qp_modify(struct mlx5_core_dev *dev, u16 opcode,
 			u32 opt_param_mask, void *qpc,
 			struct mlx5_core_qp *qp)
 {
+
+    printk("HELLO THERE in core_qp_modify\n");
 	struct mbox_info mbox;
 	int err;
 
@@ -516,6 +518,7 @@ int mlx5_core_qp_modify(struct mlx5_core_dev *dev, u16 opcode,
 		return err;
 
 	err = mlx5_cmd_exec(dev, mbox.in, mbox.inlen, mbox.out, mbox.outlen);
+    printk("core_qp_modify about to return: %d\n", err);
 	mbox_free(&mbox);
 	return err;
 }
